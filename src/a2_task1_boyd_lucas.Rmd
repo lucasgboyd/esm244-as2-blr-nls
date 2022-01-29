@@ -1,0 +1,90 @@
+---
+title: "Palmetto Binary Logistic Regression (Task 1)"
+author: "Lucas Boyd"
+date: "1/28/2022"
+output: 
+  html_document:
+    code-folding: hide
+---
+
+```{r setup, include=TRUE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+# attach packages
+library(tidyverse)
+library(here)
+library(broom)
+library(patchwork)
+```
+
+## Overview
+
+An overview section describing the data, the question(s) to be addressed in your analysis, and a citation of the dataset.
+
+**Data Citation:** Data source: Abrahamson, W.G. 2019. Survival, growth and biomass estimates of two dominant palmetto species of south-central Florida from 1981 - 2017, ongoing at 5-year intervals ver 1. Environmental Data Initiative. https://doi.org/10.6073/pasta/f2f96ec76fbbd4b9db431c79a770c4d5
+
+### Reading in and cleaning up the data
+```{r}
+palmetto <- read_csv(here("data", "palmetto.csv")) %>% 
+  select(height, length, width, green_lvs, species) %>% # selecting for plant height (height), canopy length (length), canopy width (width), and number of green leaves (green_lvs)
+# 1 = Serenoa repens, 2 = Sabal etonia
+  drop_na() %>% # dropping NA values
+  mutate(species_name = case_when(
+    species == 1 ~ "Serenoa repense", # new column for species name
+    species == 2 ~ "Sabal etonia"
+  ))
+```
+
+# Visualizing differences between the two species
+```{r}
+p1 <-ggplot(data = palmetto, aes(x = species_name, y = green_lvs, fill = species_name)) +
+  geom_violin(scale = "count", color = "black") +
+geom_boxplot(color = "black", fill = NA, width = 0.1, outlier.color = NA) +
+  stat_summary(fun=mean, 
+               geom="point", 
+               shape=20, 
+               size=4, 
+               color="black", 
+               fill="black") +
+  scale_fill_manual(values = c("orange4", "darkolivegreen")) +
+  theme_minimal(13) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(vjust = 5, size = 12)) +
+  labs(x = element_blank(), y = "Number of green leaves") 
+
+```
+FROM REPORT4 Flipper length observations (mm) for nesting adults of the three penguin species (Adélie, chinstrap, and gentoo). Gold (Adélie), teal (chinstrap) and coral (gentoo) points indicate individual observations for flipper length (millimeters) of an adult nesting penguin. Box endpoints indicate the 25^th^ and 75^th^ percentile values; the black line and black point within the box indicate the median and mean value for each species, respectively. Data: Gorman et al. (2014). 
+
+
+```{r}
+p3 <- ggplot(data = palmetto, (aes(x = width, y = length))) +
+  geom_hex() +
+  facet_wrap(~ species_name) + 
+  labs (x = "Canopy width (cm)", y = "Canopy length (cm)") +
+  theme_minimal(14) +
+  theme(legend.position = c(0.9, 0.3))
+
+
+p2 <- ggplot(data = palmetto, (aes(x = species_name, y = height, fill = species_name))) +
+    geom_violin(scale = "count", color = "black") +
+geom_boxplot(color = "black", fill = NA, width = 0.1, outlier.color = NA) +
+  stat_summary(fun=mean, 
+               geom="point", 
+               shape=20, 
+               size=4, 
+               color="black", 
+               fill="black") +
+  scale_fill_manual(values = c("orange4", "darkolivegreen")) +
+  theme_minimal(13) +
+  theme(legend.position = "none",
+        axis.text.x = element_text(vjust = 5, size = 12)) +
+  labs(x = element_blank(), y = "Plant Height (cm)") 
+```
+
+
+```{r}
+(p1 | p2)
+p3
+```
+
+
+

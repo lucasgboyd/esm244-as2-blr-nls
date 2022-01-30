@@ -5,6 +5,9 @@ date: "1/28/2022"
 output: 
    html_document:
      code_folding: hide
+editor_options: 
+  markdown: 
+    wrap: 72
 ---
 
 ```{r setup, include=TRUE, message = FALSE, warning = FALSE}
@@ -19,13 +22,26 @@ library(caret)
 library(kableExtra)
 ```
 
-## A. Overview
+### Overview
 
-An overview section describing the data, the question(s) to be addressed in your analysis, and a citation of the dataset.
+The following report examines growth data of two dominant palmetto
+species (*Serenoa repens* and *Sabal etonia*) in South Florida to
+produce a binomial logistic regression model that classifies plant
+species based on several physical features of the plant. First,
+differences between the species are visualized to determine which
+variables will be useful in classifying species. Then, the model is
+evaluated using 10-fold cross validation and AIC. Finally, the model is
+applied to the data to determine its efficacy in predicting plant
+species.
 
-**Data Citation:** Data source: Abrahamson, W.G. 2019. Survival, growth and biomass estimates of two dominant palmetto species of south-central Florida from 1981 - 2017, ongoing at 5-year intervals ver 1. Environmental Data Initiative. https://doi.org/10.6073/pasta/f2f96ec76fbbd4b9db431c79a770c4d5
+**Data Citation:** Data source: Abrahamson, W.G. 2019. Survival, growth
+and biomass estimates of two dominant palmetto species of south-central
+Florida from 1981 - 2017, ongoing at 5-year intervals ver 1.
+Environmental Data Initiative.
+<https://doi.org/10.6073/pasta/f2f96ec76fbbd4b9db431c79a770c4d5>
 
 ### Reading in and cleaning up the data
+
 ```{r}
 palmetto <- read_csv(here("data", "palmetto.csv")) %>% 
   select(height, length, width, green_lvs, species) %>% # selecting for plant height (height), canopy length (length), canopy width (width), and number of green leaves (green_lvs)
@@ -38,7 +54,17 @@ palmetto <- read_csv(here("data", "palmetto.csv")) %>%
   mutate(species_name = as_factor(species_name)) # changing species name to a factor for use in blr
 ```
 
-# B. Visualizing differences between the two species
+**Variables of interest:**
+-   Number of green leaves - green_lvs
+
+-   Height of plant (cm) - height
+
+-   Width of canopy (cm) - width
+
+-   Length of canopy (cm) - length
+
+### Visualizing differences between species
+
 ```{r}
 # ggplots to visualize the differences in each variable between species
 # effectplot could also be useful in these visualizations for blr 
@@ -58,7 +84,7 @@ geom_boxplot(color = "black", fill = NA, width = 0.1, outlier.color = NA) + # ad
         axis.text.x = element_text(vjust = 5, size = 12)) + # customizing test
   labs(x = element_blank(), y = "Number of green leaves") # adding labels
 
-# repeated above code for each variable in subsequent 3 plots
+# repeated above code for each variable in subsequent 3 plots, inserting different variables
 
 p2 <- ggplot(data = palmetto, (aes(x = species_name, y = height, fill = species_name))) +
     geom_violin(scale = "count", color = "black") +
@@ -111,11 +137,33 @@ geom_boxplot(color = "black", fill = NA, width = 0.1, outlier.color = NA) +
 (p3 | p4)
 ```
 
-**Figure 1** compares two palmetto species to determine feasibility of each of four variables in predicting whether a plant is *Serenoa repens* (green) or *Sabal etonia* (orange). Variables examined in the figure are: number of green leaves on the plant (top left), height of plant (cm) (top right), canopy width (cm) (bottom left) and canopy length (cm) (bottom right). Width of the shape in each figure represents the quantity of measurments at that particular value. Box endpoints indicate the 25^th^ and 75^th^ percentile values; the black line and black point within the box indicate the median and mean value for each species, respectively. Based on this visualization, it appears that number of green leaves, canopy length and canopy width will all be useful in predicting the species of the palmetto. 
+**Fig. 1** compares two palmetto species to determine feasibility of
+each of four variables in predicting whether a plant is *Serenoa repens*
+(green) or *Sabal etonia* (orange). Variables examined in the figure
+are: number of green leaves on the plant (top left), height of plant
+(cm) (top right), canopy width (cm) (bottom left) and canopy length (cm)
+(bottom right). Width of the shape in each figure represents the
+quantity of observations at that particular value. Box endpoints
+indicate the 25^th^ and 75^th^ percentile values; the black line and
+black point within the box indicate the median and mean value for each
+species, respectively.
 
-**Conclusion:** Based on this visualization, it appears that number of green leaves and canopy length will be effectively in correctly classifying species, since there appears to be a noticeable difference in the mean, median and overall spread of the data. Plant height and canopy width differ only very slightly between the two species, and thus will be less useful in classifying the species of plant from the data. 
+**Conclusion:** Based on this visualization, it appears that number of
+green leaves and canopy length will be useful in correctly classifying
+species, since there is a noticeable difference in the mean, median and
+overall spread of the data. Plant height and canopy width differ only
+very slightly between the two species, and thus will be less useful in
+classifying the species of plant.
 
-### C. Binomial logistic regression
+### Binomial logistic regression
+
+Running BLR for two models:
+
+-   **Model 1:** Plant species as a function of plant height, number of
+    green leaves, canopy width and canopy length
+
+-   **Model 2:** Plant species as a function of plant height, number of
+    green leaves, and canopy width
 
 ```{r}
 # storing functions of combinations of variables for use in regression
@@ -131,17 +179,26 @@ blr2 <- glm(formula = f2,
             data = palmetto,
             family = "binomial")
 
-# taking a look at the outputs of the regression
+# taking a look at the outputs of the regression with summary()
 # reference (0) = Sabal etonia
-summary(blr1)
-summary(blr2) 
+```
 
-aictab(list(blr1, blr2))
+### Model Selection
+
+#### AIC
+
+```{r}
+aic <- aictab(list(blr1, blr2))
 # model1 = 5194
 # model2 = 5987
 ```
 
-### Model Selection 
+**Model 1:** `r round(aic$AICc[1], 1)`
+
+**Model 2:** `r round(aic$AICc[2], 1)`
+
+The difference in AICc is very large (`r round(aic$Delta_AICc[2], 1)`), thus model
+1 has significantly better fit than model 2.
 
 #### 10-fold cross validation
 
@@ -150,30 +207,34 @@ set.seed(24) # setting seed for reproducibility
 
 tr_ctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 10) # stroing train control, specifying 10 folds
 
-
-
 # train the model
 model1 <- train(f1, data = palmetto,
                 method = "glm",
                 family = "binomial",
                 trControl = tr_ctrl)
-
-model1 # accuracy = 0.917
+# accuracy = 0.917
 
 # train the other model
 model2 <- train(f2, data = palmetto,
                 method = "glm",
                 family = "binomial",
                 trControl = tr_ctrl)
-
-model2 # accuracy = 0.899
+# accuracy = 0.899
 ```
 
-Model 1, which classifies palmetto species as a function of plant height, canopy width, canopy length and number of green leaves, performed better during 10-fold cross validation (accuracy = 91.7%, AICc = 5194) than model 2 (accuracy = 89.9%, AICc = 5987). Thus, based on the prediction accuracy results and AIC values, model 1 is preferred. 
+**Model assessment results:** Model 1, which classifies palmetto species
+as a function of plant height, canopy width, canopy length and number of
+green leaves, performed better during 10-fold cross validation (accuracy
+= 91.7%, AICc = `r round(aic$AICc[1], 1)`) than model 2 (accuracy = 89.9%, AICc =
+`r round(aic$AICc[2], 1)`). Thus, based on the prediction accuracy results and AIC
+values, model 1 is preferred.
 
-### D. Regression results
+### Regression results
 
-**Table 1** shows the results of binomial logistic regression for model 1. Coefficients show the change in log odds of the resulting species being *Sabal etonia* (reference) as opposed to *Serenoa repens*.
+**Table 1** shows the results of binomial logistic regression for model
+1. Coefficients show the change in log odds of the resulting species
+being *Sabal etonia* (reference) as opposed to *Serenoa repens*.
+
 ```{r}
 # storing the results of regression as a data frame
 blr1_tidy <- tidy(blr1) %>%  
@@ -195,9 +256,11 @@ kable(blr1_tidy,
   
 ```
 
-### E. Model success rate
+### Model success rate
 
-**Table 1** shows the success rate of the chosen model in classifying each plant species. 
+**Table 1** shows the success rate of the chosen model in classifying
+each plant species when trained on and applied to the whole data set.
+
 ```{r}
 # storing a function for prediction accuracy
 prediction_accuracy <- function(x, y) {
@@ -218,18 +281,22 @@ palmetto_success <- palmetto %>%
 
 accuracy_table <- palmetto_success %>% 
   group_by(species_name) %>% # grouping by species
-  summarize(total_accurate = sum(accurate), # finding total accurate predictions
+  summarize(observations = n(),
+    total_accurate = sum(accurate), # finding total accurate predictions
             total_inaccurate = n() - sum(accurate), # total inaccurate predictions
-            accuracy = (mean(accurate))*100) # accuracy %
-accuracy_table
-kable(accuracy_table, digits = 1, col.names = c("Palmetto Species", "Accurate", "Inaccurate", "% Accurate ")) %>% 
+            accuracy = (mean(accurate))*100,) # accuracy %
+
+# finalized table with kable
+kable(accuracy_table, digits = 1, col.names = c("Palmetto Species", "Total Observations", "Accurate", "Inaccurate", "% Accurate ")) %>% 
   kable_minimal(full_width = FALSE)
 
 
 ```
 
-1-2 sentence conclusion paragraph
-
-
-
-
+**Conclusion:** Model 1 (species as a function of plant height, canopy
+width, canopy length, and number of green leaves) is highly effective in
+classifying a plant as either *Sabal etonia*
+(`r round(accuracy_table$accuracy[2], 1)`%, n =
+`r accuracy_table$observations[2]`) or Serenoa repens
+(`r round(accuracy_table$accuracy[1], 1)`%, n =
+`r accuracy_table$observations[1]`).

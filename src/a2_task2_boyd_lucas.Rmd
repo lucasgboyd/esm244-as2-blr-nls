@@ -1,0 +1,76 @@
+---
+title: "Lizards Parameter Estimation (Task 2)"
+author: "Lucas Boyd"
+date: "2/1/2022"
+output: html_document
+---
+
+```{r setup, include=TRUE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+# attach packages
+library(tidyverse)
+library(broom)
+library(purrr)
+library(here)
+library(janitor)
+```
+
+
+```{r}
+# reading in the data
+lizards <- read_csv(here("data", "lizard.csv")) %>% 
+  clean_names() %>% 
+  mutate(log_weight = log(weight)) %>% # log transforming the data - since we are using an exponential base equation
+  mutate(log_length = log(sv_length)) %>% 
+  drop_na()
+```
+
+
+```{r}
+# looking at the data 
+ggplot(data = lizards, aes(x = sv_length, y = weight)) +
+         geom_point()
+# taking a quick peak at the log transformed data
+ggplot(data = lizards, aes(x = log_length, y = log_weight)) +
+         geom_point()
+```
+#### Starting model:
+\[
+W = a(SVL)^b
+\]
+
+```{r}
+guess_model <- lm(log_weight ~ log_length, data = lizards)
+
+tidy_guess <- tidy(guess_model)
+
+coef <- coefficients(guess_model)
+# estimate of coefficient b = 2.537 `r tidy_guess$estimate[2]`
+# estmate of coefficent b = -8.475 `r tidy_guess$estimate[1]`
+
+# storing a function of our model with coefficients
+weight_function <- function(sv_length, a, b){
+  weight = a*(sv_length)^b
+  return(weight)
+}
+```
+
+```{r}
+
+lizards_nls = nls(weight ~ weight_function(sv_length),
+                  data = lizards,
+                  start = list(b = coef[2],
+                               a = coef[1]),
+                  trace = TRUE)
+
+one_stock_nls = nls(surplus~fox(m, carry, TBbest),
+                    data = one_stock,
+                    start = list(m = coef[1], carry = guess_vec[2]), 
+                    trace = TRUE)
+
+```
+
+
+
+
+

@@ -69,7 +69,7 @@ palmetto <- read_csv(here("data", "palmetto.csv")) %>%
 # ggplots to visualize the differences in each variable between species
 # effectplot could also be useful in these visualizations for blr 
 
-p1 <-ggplot(data = palmetto, aes(x = species_name, y = green_lvs, fill = species_name)) + 
+p1 <- ggplot(data = palmetto, aes(x = species_name, y = green_lvs, fill = species_name)) + 
   geom_violin(scale = "count", color = "black") + # geom violin to visualize the large volume of data
 geom_boxplot(color = "black", fill = NA, width = 0.1, outlier.color = NA) + # adding summary median and quartiles to figure
   stat_summary(fun=mean, # adding the mean to the figure 
@@ -80,8 +80,9 @@ geom_boxplot(color = "black", fill = NA, width = 0.1, outlier.color = NA) + # ad
                fill="black") +
   scale_fill_manual(values = c("orange4", "darkolivegreen")) + # customizing colors
   theme_minimal(13) + # changing theme and font size
-  theme(legend.position = "none",
-        axis.text.x = element_text(vjust = 5, size = 12)) + # customizing test
+  theme(legend.position = "top",
+        axis.text.x = element_blank(),
+        legend.title = element_blank()) +
   labs(x = element_blank(), y = "Number of green leaves") # adding labels
 
 # repeated above code for each variable in subsequent 3 plots, inserting different variables
@@ -98,7 +99,7 @@ geom_boxplot(color = "black", fill = NA, width = 0.1, outlier.color = NA) +
   scale_fill_manual(values = c("orange4", "darkolivegreen")) +
   theme_minimal(13) +
   theme(legend.position = "none",
-        axis.text.x = element_text(vjust = 5, size = 12)) +
+        axis.text.x = element_blank()) +
   labs(x = element_blank(), y = "Plant Height (cm)") 
 
 p3 <- ggplot(data = palmetto, (aes(x = species_name, y = width, fill = species_name))) +
@@ -113,7 +114,7 @@ geom_boxplot(color = "black", fill = NA, width = 0.1, outlier.color = NA) +
   scale_fill_manual(values = c("orange4", "darkolivegreen")) +
   theme_minimal(13) +
   theme(legend.position = "none",
-        axis.text.x = element_text(vjust = 5, size = 12)) +
+        axis.text.x = element_blank()) +
   labs(x = element_blank(), y = "Canopy Width (cm)") 
 
 p4 <- ggplot(data = palmetto, (aes(x = species_name, y = length, fill = species_name))) +
@@ -128,7 +129,7 @@ geom_boxplot(color = "black", fill = NA, width = 0.1, outlier.color = NA) +
   scale_fill_manual(values = c("orange4", "darkolivegreen")) +
   theme_minimal(13) +
   theme(legend.position = "none",
-        axis.text.x = element_text(vjust = 5, size = 12)) +
+        axis.text.x = element_blank()) +
   labs(x = element_blank(), y = "Canopy Length (cm)") 
 ```
 

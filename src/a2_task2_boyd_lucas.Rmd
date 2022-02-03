@@ -4,7 +4,7 @@ author: "Lucas Boyd"
 date: "2/1/2022"
 output: 
   html_document:
-    code_folding: hide
+    code_folding: show
 ---
 
 ## Overview
@@ -33,6 +33,10 @@ lizards <- read_csv(here("data", "lizard.csv")) %>%
   clean_names() %>% 
   mutate(log_weight = log(weight)) %>% # log transforming the data - since we are using an exponential base equation
   mutate(log_length = log(sv_length)) %>% 
+  mutate(sex = case_when(
+    sex == "M" ~ "Male",
+    sex == "F" ~ "Female"
+  )) %>% 
   drop_na()
 ```
 
@@ -76,7 +80,7 @@ weight_function <- function(a, sv_length, b){
 lizards_nls <- nls(weight ~ weight_function(a, sv_length, b),
                   data = lizards,
                   start = list(b = coef[2], # starting with the coefficients we estimated from the linear model
-                               a = coef[1]))
+                               a = exp(coef[1]))) # retransforming the intercept with exp()
 
 nls_tidy <- tidy(lizards_nls) # tidy output of NLS model
 
@@ -104,27 +108,29 @@ ggplot() +
              color = sex)) +
   geom_line(data = lizards_augment, aes(
             x = sv_length,
-            y = .fitted), 
-            color = "red") +
-  theme_minimal() +
-  scale_color_manual(values = c("grey45", "black")) +
-  theme(legend.position = c(0.2,0.7)) +
+            y = .fitted,
+            color = "Model Predictions"),
+            size = 0.7) +
+  theme_minimal(13) +
+  scale_color_manual(values = c("grey45", "black", "red")) +
+  theme(legend.position = c(0.2,0.7), legend.title = element_blank()) +
   labs( x = "SV Length (mm)", y = "Weight (g)")
   
 
 # calculating RMSE
 lizards_rmse <- rmse(lizards_nls, data = lizards)
 ```
-**Fig. 1** shows
+
+**Fig. 1** compares SV length and weight for all lizard species, colored according to sex. The red line represents the NLS model trained on the data to predict weight as a function of SV length. RMSE for the NLS model was `r round(lizards_rmse, 3)`
 
 
 ## Running NLS on Male western whiptail lizards
 
-**Table 2** displays the results of NLS analysis on male western whiptail lizards, indicating the coefficients produced by the model, standard error, and signficance level. 
+**Table 2** displays the results of NLS analysis on male western whiptail lizards, indicating the coefficients produced by the model, standard error, and significance level. 
 ```{r}
 # filtering for male whiptails
 whips <- lizards %>% 
-  filter(spp == "CNTI", sex == "M") 
+  filter(spp == "CNTI", sex == "Male") 
 
 # running linear regression on log transformed data to estimate starting coefficients
 guess_whips <- lm(log_weight ~ log_length, data = whips)
@@ -136,7 +142,7 @@ whips_coef <- coefficients(guess_whips) # pulling out the coefficients for use i
 whips_nls <- nls(weight ~ weight_function(a, sv_length, b), # running NLS on male western whiptails
                   data = whips,
                   start = list(b = whips_coef[2], # starting from our guess coefficients
-                               a = whips_coef[1]))
+                               a = exp(whips_coef[1]))) # retransforming the intercept coefficient 
 
 whips_nls_tidy <- tidy(whips_nls) # tidy output of model
 
@@ -155,25 +161,37 @@ kable(col.names = c("Terms", "Coefficients", "Standard Error", "P Value"),
 # predicting data based on model
 whips_augment <- augment(whips_nls)
 
-# visualizing fitted model against actual data
+
+# creating a dataframe with all data and predicted values from augment 
+whiptails_general <- data.frame(lizards, lizards_augment) %>% 
+  filter(spp == "CNTI", sex == "Male") # filtering for the whiptail subset
+
+# visualizing fitted models against actual data
 ggplot() +
   geom_point(data = whips, aes(
              x = sv_length,
-             y = weight)) +
+             y = weight,
+             color = "Actual Data")) +
   geom_line(data = whips_augment, aes(
             x = sv_length,
-            y = .fitted),
-            color = "red") +
-  theme_minimal() +
-  labs( x = "SV Length (mm)", y = "Weight (g)")
+            y = .fitted,
+            color = "Whiptail Specific Model"),
+            size = 0.7) +
+  geom_line(data = whiptails_general, aes(
+            x = sv_length,
+            y = .fitted,
+            color = "All Species Model"),
+            size = 0.7) +
+  scale_color_manual(values = c("black", "red", "blue")) +
+  theme_minimal(13) +
+  labs( x = "SV Length (mm)", y = "Weight (g)") +
+  theme(legend.title = element_blank(),
+        legend.position = c(0.3, 0.72))
 
 # calculating RMSE
-whips_rmse <- rmse(whips_nls, data = whips)
+whips_rmse <- rmse(whips_nls, data = whips) # running whiptail model on whiptail subset
+whips_rmse_general <- rmse(lizards_nls, data = whips) # running general model on whiptail subset
+
 ```
 
-**Fig. 2** shows 
-
-Final model
-\[
-W = a(SVL)^b
-\]
+**Fig. 2** compares SV length and weight in male western whiptail lizards. The red line represents the NLS model trained on the entire lizard dataset including all species, while the blue line is the NLS model trained only on the subset of male western whiptail lizards. Both models predict weight as a function of SV length. The RMSE of the all species model was `r round(whips_rmse_general, 3)`, while the RMSE of the whiptail specific model was `r round(whips_rmse, 3)`. Thus the whiptail specific model is preferred when predicting weight from SV length of male western whiptail lizards, since the model's lower RMSE shows that it is slightly more accurate and the model's line appears to better fit the actual spread of data. 

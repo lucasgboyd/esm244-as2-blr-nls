@@ -20,6 +20,7 @@ library(patchwork)
 library(AICcmodavg)
 library(caret)
 library(kableExtra)
+library(equatiomatic)
 ```
 
 ### Overview
@@ -252,10 +253,14 @@ blr1_tidy <- tidy(blr1) %>%
 
 # finalizing table
 kable(blr1_tidy, 
-      col.names = c("Term", "Coefficient", "Standard Error", "P Value")) %>% 
+      col.names = c("Term", "Coefficient", "Standard Error", "P Value"),
+      digits = 3) %>% 
   kable_minimal(full_width = FALSE)
   
 ```
+
+**Final Model Equation**:
+`r equatiomatic::extract_eq(blr1, wrap = TRUE, use_coefs = TRUE)`
 
 ### Model success rate
 

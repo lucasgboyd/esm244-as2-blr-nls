@@ -193,7 +193,8 @@ library(broom)
 library(patchwork)
 library(AICcmodavg)
 library(caret)
-library(kableExtra)</code></pre>
+library(kableExtra)
+library(equatiomatic)</code></pre>
 <div id="overview" class="section level3">
 <h3>Overview</h3>
 <p>The following report examines growth data of two dominant palmetto species (<em>Serenoa repens</em> and <em>Sabal etonia</em>) in South Florida to produce a binomial logistic regression model that classifies plant species based on several physical features of the plant. First, differences between the species are visualized to determine which variables will be useful in classifying species. Then, the model is evaluated using 10-fold cross validation and AIC. Finally, the model is applied to the data to determine its efficacy in predicting plant species.</p>
@@ -365,7 +366,8 @@ blr1_tidy &lt;- tidy(blr1) %&gt;%
 
 # finalizing table
 kable(blr1_tidy, 
-      col.names = c(&quot;Term&quot;, &quot;Coefficient&quot;, &quot;Standard Error&quot;, &quot;P Value&quot;)) %&gt;% 
+      col.names = c(&quot;Term&quot;, &quot;Coefficient&quot;, &quot;Standard Error&quot;, &quot;P Value&quot;),
+      digits = 3) %&gt;% 
   kable_minimal(full_width = FALSE)</code></pre>
 <table class=" lightable-minimal" style="font-family: &quot;Trebuchet MS&quot;, verdana, sans-serif; width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
@@ -390,10 +392,10 @@ P Value
 Intercept
 </td>
 <td style="text-align:right;">
-3.2266851
+3.227
 </td>
 <td style="text-align:right;">
-0.1420708
+0.142
 </td>
 <td style="text-align:left;">
 &lt;0.001
@@ -404,10 +406,10 @@ Intercept
 Height
 </td>
 <td style="text-align:right;">
--0.0292173
+-0.029
 </td>
 <td style="text-align:right;">
-0.0023061
+0.002
 </td>
 <td style="text-align:left;">
 &lt;0.001
@@ -418,10 +420,10 @@ Height
 Length
 </td>
 <td style="text-align:right;">
-0.0458233
+0.046
 </td>
 <td style="text-align:right;">
-0.0018661
+0.002
 </td>
 <td style="text-align:left;">
 &lt;0.001
@@ -432,10 +434,10 @@ Length
 Width
 </td>
 <td style="text-align:right;">
-0.0394434
+0.039
 </td>
 <td style="text-align:right;">
-0.0021000
+0.002
 </td>
 <td style="text-align:left;">
 &lt;0.001
@@ -446,10 +448,10 @@ Width
 # of green leaves
 </td>
 <td style="text-align:right;">
--1.9084747
+-1.908
 </td>
 <td style="text-align:right;">
-0.0388634
+0.039
 </td>
 <td style="text-align:left;">
 &lt;0.001
@@ -457,6 +459,12 @@ Width
 </tr>
 </tbody>
 </table>
+<p><strong>Final Model Equation</strong>: <span class="math display">\[
+\begin{aligned}
+\log\left[ \frac { \widehat{P( \operatorname{species\_name} = \operatorname{Sabal\ etonia} )} }{ 1 - \widehat{P( \operatorname{species\_name} = \operatorname{Sabal\ etonia} )} } \right] &amp;= 3.23 - 0.03(\operatorname{height}) + 0.05(\operatorname{length}) + 0.04(\operatorname{width})\ - \\
+&amp;\quad 1.91(\operatorname{green\_lvs})
+\end{aligned}
+\]</span></p>
 </div>
 <div id="model-success-rate" class="section level3">
 <h3>Model success rate</h3>
